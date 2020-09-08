@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import time
 import seaborn as sns
 sns.set()
+
 
 # sns.set(style="whitegrid")
 
@@ -25,65 +27,88 @@ def findProp(i):
     return b, d
 
 
-# Generate and plot one population trajectory
+# Function: Generate One Population Trajectory
+def popTrajectory(t, P0):
+    pop = np.zeros(t)
+    pop[0] = P0
+    for k in range(t-1):
+        if pop[k] < 1:
+            break
+        else:
+            b, d = findProp(pop[k])
+            pop[k+1] = pop[k] + changePop(b, d)
+    return pop
+
+
+# Generate and plot some population trajectories
 # --- Intial Parameters
-# r = 0.004
-# K = 50
-r = 0.015
-K = 8
-t = 8000
-P0 = 100  # Initial population
+r = 0.004
+K = 50
+t = 3000
+aP0 = [8, 50, 100]  # Initial population
 
 N = 2*K
-pop = np.zeros(t)
-pop[0] = P0
-
-# --- Generate population
-for k in range(t-1):
-    if pop[k] < 1:
-        break
-    else:
-        b, d = findProp(pop[k])
-        pop[k+1] = pop[k] + changePop(b, d)
 
 
 #--- Plot
-time = np.linspace(0, t-1, t)
-time_pop = pd.DataFrame(pop, time, ["Population"])
-time_pop = time_pop.rolling(7).mean()
-#ax = sns.lineplot(x="Time", y="Population", data=time_pop, palette="tab10", linewidth=2.5)
-ax = sns.lineplot(data=time_pop, palette="tab10", linewidth=2.5)
+current_palette = sns.color_palette()
+for P0 in aP0:
+    pop = popTrajectory(t, P0)
+    time = np.linspace(0, t-1, t)
+    time_pop = pd.DataFrame(pop, time, [P0])
+    time_pop = time_pop.rolling(7).mean()
+    ax = sns.lineplot(data=time_pop, palette=[
+                      current_palette[np.random.randint(0, len(current_palette))]], linewidth=1)
+
 ax.set(xlabel='Time', ylabel='Population')
 plt.show()
 
 
-# Find the extinction time
-# --- Intial Parameters
+#--- Histogram
+N_trial = 500
+P0 = 100
+t = 3000
 
-r = 0.015
-K = 8
-t = 8000
-P0 = 100  # Initial population
+s = []
+for i in range(N_trial):
+    pop = popTrajectory(t, P0)
+    s.append(pop[t-1])
 
-N = 2*K
-
-
-# Function: Extinction time
-def extinctionTime(pop):
-    extime = 0
-    while pop > 0:
-        extime += 1
-        b, d = findProp(pop)
-        pop += changePop(b, d)
-    return extime
+sns.distplot(s, label='Histogram of Population')
+plt.legend(loc="upper left")
+plt.show()
 
 
-print("Extinction when ", extinctionTime(P0))
+# # Find the extinction time
+# # --- Intial Parameters
 
-p0 = np.random.randint(1, 100, 15)
-nloop = len(p0)
-aextime = np.zeros(nloop)
-for i in range(nloop):
-    aextime[i] = extinctionTime(p0[i])
+# r = 0.015
+# K = 8
+# t = 8000
+# P0 = 100  #Initial population
 
-print(aextime)
+# N = 2*K
+
+
+# # Function: Extinction time
+# def extinctionTime(pop):
+#     extime = 0
+#     while pop > 0:
+#         extime += 1
+#         b, d = findProp(pop)
+#         pop += changePop(b, d)
+#     return extime
+
+
+# print("Extinction when ", extinctionTime(P0))
+
+# start = time.time()
+# p0 = np.random.randint(1, 100, 15)
+# nloop = len(p0)
+# aextime = np.zeros(nloop)
+# for i in range(nloop):
+#     aextime[i] = extinctionTime(p0[i])
+
+# print(aextime)
+# end = time.time()
+# print(end-start)
